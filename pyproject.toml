@@ -9,6 +9,10 @@ python = "^3.9"
 biopython = "^1.79"
 click = "^8.0.4"
 click-log = "^0.3.2"
+SQLAlchemy = "^1.4.32"
+psycopg2 = "^2.9.3"
+psycopg2-binary = "^2.9.3"
+pandas = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
 

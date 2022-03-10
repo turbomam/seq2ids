@@ -41,7 +41,12 @@ def seq2ids(word: str):
     # print(seq_record.id)
     # print(seq_record.seq)
 
-    result_handle = NCBIWWW.qblast("blastn", "nt", sequence_data)
+    # one minute?
+    result_handle = NCBIWWW.qblast(program="blastn", database="nt", sequence=sequence_data)
+
+    blast_results = result_handle.read()
+    
+    print(blast_results)
 
 
 if __name__ == "__main__":
