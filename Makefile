@@ -2,4 +2,4 @@
 
 phoniest:
 	poetry run seq2ids \
-		--word conquer
+		--secrets_file local/secrets.yaml

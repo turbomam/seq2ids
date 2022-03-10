@@ -1,12 +1,12 @@
-from Bio.Blast import NCBIWWW
-from Bio import SeqIO
-
+import datetime
 import logging
-
-from typing import Optional, Dict, List, Any
+import time
 
 import click
 import click_log
+from Bio.Blast import NCBIWWW
+
+from seq2ids.get_seqs_from_db import SeqsFromDb
 
 logger = logging.getLogger(__name__)
 click_log.basic_config(logger)
@@ -14,27 +14,38 @@ click_log.basic_config(logger)
 
 @click.command()
 @click_log.simple_verbosity_option(logger)
-@click.option("--word")
-# @click.option("--right_model", type=click.Path(exists=True), required=True)
-# @click.option("--yaml_output", type=click.Path(), required=True)
-def seq2ids(word: str):
+@click.option("--secrets_file", type=click.Path(exists=True), required=True)
+def seq2ids(secrets_file: str):
     """
     Gets slots, listed in config_tsv, from source_model and puts them in recipient_model
-    :param word:
+    :param secrets_file:
     :return:
     """
 
     # todo help for each option
-    # todo docstring
+    # todo better docstring
 
-    print(word)
+    sfd = SeqsFromDb()
+    sfd.get_secrets_dict(secrets_file=secrets_file)
+    rf = sfd.query_to_frame()
+    # print(rf)
 
-    sequence_file = "blast_example.fasta"
+    seqs = rf['sequence'].tolist()
 
-    # make safer with with
-    sequence_data = open(sequence_file).read()
+    first_seq = seqs[0]
 
-    print(sequence_data)
+    print(first_seq)
+
+    # sequence_file = "blast_example.fasta"
+    #
+    # # make safer with with
+    # sequence_data = open(sequence_file).read()
+    #
+    # print(sequence_data)
+
+    ts = time.time()
+    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+    print(st)
 
     # seq_record = next(SeqIO.parse(sequence_file, 'fasta'))
     #
@@ -42,10 +53,14 @@ def seq2ids(word: str):
     # print(seq_record.seq)
 
     # one minute?
-    result_handle = NCBIWWW.qblast(program="blastn", database="nt", sequence=sequence_data)
+    result_handle = NCBIWWW.qblast(program="blastn", database="nt", sequence=first_seq)
+
+    ts = time.time()
+    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+    print(st)
 
     blast_results = result_handle.read()
-    
+
     print(blast_results)
 
 
