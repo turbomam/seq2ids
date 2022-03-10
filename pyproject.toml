@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "seq2ids"
+version = "0.1.0"
+description = "blast sequences to get ids of the taxon. gene, etc."
+authors = ["Mark Andrew Miller <MAM@lbl.gov>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+biopython = "^1.79"
+click = "^8.0.4"
+click-log = "^0.3.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+seq2ids = "seq2ids.seq2ids:seq2ids"
