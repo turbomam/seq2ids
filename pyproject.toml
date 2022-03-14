@@ -18,6 +18,7 @@ beautifulsoup4 = "^4.10.0"
 requests = "^2.27.1"
 bcbio-gff = "^0.6.9"
 gffutils = "^0.10.1"
+black = "*"
 
 [tool.poetry.dev-dependencies]
 

@@ -72,6 +72,10 @@ def seq2ids(secrets_file: str, fasta_out: str, metadata_tsv_out: str, min_len: i
             if r != 1:
                 print('Error while writing sequence:  ' + sr.id)
 
+
+if __name__ == "__main__":
+    seq2ids()
+
     # seqs = rf['sequence'].tolist()
     #
     # first_seq = seqs[0]
@@ -104,7 +108,3 @@ def seq2ids(secrets_file: str, fasta_out: str, metadata_tsv_out: str, min_len: i
     # # blast_results = result_handle.read()
     # #
     # # print(blast_results)
-
-
-if __name__ == "__main__":
-    seq2ids()
