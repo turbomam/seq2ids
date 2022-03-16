@@ -7,8 +7,8 @@ from
 join parts_sequences_plus psp
 	on
 	br.qacc = psp.seq_name
-where
-	psp."type" = 'insertion'
+--where
+--	psp."type" = 'insertion'
 group by
 	sacc
 order by

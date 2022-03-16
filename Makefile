@@ -50,19 +50,25 @@ target/parts_sequences_plus.tsv:
 # todo make sure they were run with the right blast tasks
 # todo could programmatically generate .ini file's -outfmt and use the same for the initial header import below
 # todo create VIEWs?
+# todo when renking, is the precedence ltr?
 blast_res_to_sqlite: target/parts_sequences_plus.tsv
-	sqlite3 target/seq2ids.db ".mode tabs" ".import seq2ids_elastic-blast_header.tsv blast_results" ""
-	sqlite3 target/seq2ids.db ".mode tabs" ".import local/batch_000-blastn-nt.out_over.tsv  blast_results" ""
-	sqlite3 target/seq2ids.db ".mode tabs" ".import local/batch_000-blastn-nt.out_under.tsv blast_results" ""
+	#sqlite3 target/seq2ids.db ".mode tabs" ".import seq2ids_elastic-blast_header.tsv blast_results" ""
+	sqlite3 target/seq2ids.db < sql/create_blast_results_table.sql
+#	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_repeat/batch_000-blastn-nt.out  blast_results" ""
+#	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_under_30_repeat/batch_000-blastn-nt.out blast_results" ""
+	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_all_swissprot/batch_000-blastx-swissprot.out blast_results" ""
+	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_all_swissprot/batch_001-blastx-swissprot.out blast_results" ""
+	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_all_swissprot/batch_002-blastx-swissprot.out blast_results" ""
 	sqlite3 target/seq2ids.db < sql/indices.sql
 	# how many HSPs use each genome?
 	sqlite3 target/seq2ids.db < sql/insertion_genome_hsp_counts.sql
 	# rank each genome for each query
 	sqlite3 target/seq2ids.db < sql/insertions_querys_genome_ranking.sql
-	sqlite3 target/seq2ids.db < sql/insertion_genome_list.sql
 	sqlite3 target/seq2ids.db < sql/ranges_to_download.sql
+#	sqlite3 target/seq2ids.db < sql/smin_smax.sql
+#	poetry run python seq2ids/efetch_features.py
+#	sqlite3 target/seq2ids.db < sql/b2f_summary.sql
 
 
-insertions_ids: clean target/parts_sequences_plus.tsv blast_res_to_sqlite target/insertion_genome_list.tsv
+insertions_ids: clean target/parts_sequences_plus.tsv blast_res_to_sqlite
 
-#wget -O /path/to/your.gff "https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?db=nuccore&report=gff3&id=<acc[.ver]>"

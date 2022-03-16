@@ -6,9 +6,19 @@ from Bio import Entrez
 from Bio import SeqIO
 
 Entrez.email = "MAM@lbl.gov"
+
+handle = Entrez.efetch(
+    db="nucleotide",
+    id='MK775706',
+    rettype="gb",
+    retmode="text",
+    seq_start='8385',
+    seq_stop='9245'
+)
+
 # todo tool?
 # todo persistent session?
-seq2ids_db_fp = "../target/seq2ids.db"
+seq2ids_db_fp = "target/seq2ids.db"
 
 row_list = []
 
@@ -28,8 +38,12 @@ for genome_range in rtd_lod:
         seq_start=genome_range["minpos"],
         seq_stop=genome_range["maxpos"],
     )
-    record = SeqIO.read(handle, "genbank")
-    handle.close()
+
+    try:
+        record = SeqIO.read(handle, "genbank")
+        handle.close()
+    except Exception:
+        print(Exception)
 
     print(f"record.id: {record.id}")
 
@@ -53,8 +67,8 @@ for genome_range in rtd_lod:
         feature_row["feature_strand"] = i.strand
         # class Bio.SeqFeature.FeatureLocation(start, end, strand=None, ref=None, ref_db=None)
         # feature_row["feature_location"] = str(i.location)
-        feature_row["feature_location_start"] = i.location.start
-        feature_row["feature_location_end"] = i.location.end
+        feature_row["feature_location_start"] = genome_range["minpos"] + i.location.start
+        feature_row["feature_location_end"] = genome_range["minpos"] + i.location.end - 1
         feature_row["feature_location_strand"] = i.location.strand
         feature_row["feature_location_ref"] = i.location.ref
         feature_row["feature_location_ref_db"] = i.location.ref_db
