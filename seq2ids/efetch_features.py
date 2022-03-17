@@ -92,6 +92,6 @@ feature_frame.replace(r'^\s*$', np.nan, regex=True, inplace=True)
 
 feature_frame.dropna(axis=1, how='all', inplace=True)
 
-feature_frame.to_csv("feature_frame.tsv", sep="\t", index=False)
+# feature_frame.to_csv("feature_frame.tsv", sep="\t", index=False)
 
 feature_frame.to_sql("features", seq2ids_db_conn, if_exists="replace")

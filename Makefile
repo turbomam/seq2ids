@@ -1,4 +1,4 @@
-.PHONY: all clean blast_res_to_sqlite
+.PHONY: all clean blast_res_to_sqlite load_seqs_blast_result nt_approach uniprot_approach
 
 clean:
 	rm -rf seq2ids.*
@@ -65,10 +65,20 @@ blast_res_to_sqlite: target/parts_sequences_plus.tsv
 	# rank each genome for each query
 	sqlite3 target/seq2ids.db < sql/insertions_querys_genome_ranking.sql
 	sqlite3 target/seq2ids.db < sql/ranges_to_download.sql
-#	sqlite3 target/seq2ids.db < sql/smin_smax.sql
-#	poetry run python seq2ids/efetch_features.py
-#	sqlite3 target/seq2ids.db < sql/b2f_summary.sql
 
 
-insertions_ids: clean target/parts_sequences_plus.tsv blast_res_to_sqlite
+load_seqs_blast_result: clean target/parts_sequences_plus.tsv blast_res_to_sqlite
+
+nt_approach: load_seqs_blast_result
+	sqlite3 target/seq2ids.db < sql/smin_smax.sql
+	poetry run python seq2ids/efetch_features.py
+	sqlite3 target/seq2ids.db < sql/b2f_summary.sql
+
+
+uniprot_approach: load_seqs_blast_result
+	poetry run python seq2ids/get_uniprot_entries.py
+	sqlite3 target/seq2ids.db < sql/parts_up_annotations.sql
+
+
+
 
