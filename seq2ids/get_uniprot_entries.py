@@ -83,7 +83,7 @@ include_fields = ['id', 'entry name', 'genes', 'genes(PREFERRED)', 'genes(ALTERN
 
 uniprot_frame = get_uniprot_sequences(uniprot_ids=random_saccs, uniprot_cols=include_fields)
 
-# uniprot_frame.to_csv("uniprot_response_frame.tsv", sep="\t", index=False)
+uniprot_frame.to_csv("target/uniprot_response_frame.tsv", sep="\t", index=False)
 
 # dtypedict or scalar, optional
 # Specifying the datatype for columns. If a dictionary is used, the keys should be the column names
