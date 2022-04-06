@@ -26,37 +26,3 @@ class SeqsFromDb:
         results_frame = pd.read_sql_query(my_query, engine)
         engine.dispose()
         return results_frame
-
-# ---
-
-# from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, Date
-# from sqlalchemy.sql import text
-# import sqlalchemy
-
-# from sqlalchemy import create_engine
-# from sqlalchemy import inspect
-# from sqlalchemy.ext.declarative import declarative_base
-# import pandas as pd
-# import pprint
-
-# Base = declarative_base()
-
-# inspector = inspect(engine)
-# temp = inspector.get_columns('parts_sequences')
-# pprint.pprint(temp)
-
-# with engine.connect() as con:
-#     rs = con.execute(myQuery)
-#
-#     for row in rs:
-#         print(row)
-
-# Base.metadata.drop_all(engine)
-
-# id
-# part_id
-# file
-# seq_name
-# type
-# date_added
-# sequence

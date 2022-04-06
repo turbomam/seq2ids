@@ -15,6 +15,7 @@ seq2ids_db_conn = sqlite3.connect(seq2ids_db_fp)
 ranges_to_download_q = "select sacc from ranges_to_download order by sacc"
 
 ranges_to_download_res = pd.read_sql_query(ranges_to_download_q, seq2ids_db_conn)
+
 saccs = ranges_to_download_res['sacc'].to_list()
 saccs_len = len(saccs)
 keep_frac = 1

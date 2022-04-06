@@ -6,7 +6,7 @@ from
 	blast_results br
 join parts_sequences_plus psp
 	on
-	br.qacc = psp.seq_name
+	br.qacc = psp.id
 --where
 --	psp."type" = 'insertion'
 group by

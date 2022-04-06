@@ -6,9 +6,6 @@ import logging
 
 import click
 import click_log
-# from Bio.Blast import NCBIWWW
-# import datetime
-# import time
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -41,11 +38,11 @@ def seq2ids(secrets_file: str, fasta_out: str, metadata_tsv_out: str, min_len: i
     sfd.get_secrets_dict(secrets_file=secrets_file)
     rf = sfd.query_to_frame()
 
-    for_fasta = rf[['seq_name', 'sequence']].copy()
+    for_fasta = rf[['id', 'sequence']].copy()
 
     metadata = for_fasta.copy()
     metadata['seq_len'] = metadata['sequence'].str.len()
-    metadata = metadata[['seq_name', 'seq_len']]
+    metadata = metadata[['id', 'seq_len']]
 
     if min_len is None:
         min_len = 0
@@ -55,11 +52,12 @@ def seq2ids(secrets_file: str, fasta_out: str, metadata_tsv_out: str, min_len: i
     print(f"min {min_len}")
     print(f"max {max_len}")
 
-    desired_ids = metadata.loc[metadata['seq_len'].ge(min_len) & metadata['seq_len'].lt(max_len), 'seq_name'].tolist()
+    # was using seq_name
+    desired_ids = metadata.loc[metadata['seq_len'].ge(min_len) & metadata['seq_len'].lt(max_len), 'id'].tolist()
 
-    desired_seqs = for_fasta.loc[for_fasta['seq_name'].isin(desired_ids)]
+    desired_seqs = for_fasta.loc[for_fasta['id'].isin(desired_ids)]
 
-    desired_seqs.sort_values('seq_name')
+    # desired_seqs.sort_values('id')
 
     metadata.to_csv(metadata_tsv_out, sep='\t', index=False)
 
@@ -67,7 +65,7 @@ def seq2ids(secrets_file: str, fasta_out: str, metadata_tsv_out: str, min_len: i
 
     with open(fasta_out, 'w') as f_out:
         for seqs in ds_lod:
-            sr = SeqRecord(Seq(seqs['sequence']), seqs['seq_name'], '', '')
+            sr = SeqRecord(Seq(seqs['sequence']), str(seqs['id']), '', '')
             r = SeqIO.write(sr, f_out, 'fasta')
             if r != 1:
                 print('Error while writing sequence:  ' + sr.id)
@@ -75,36 +73,3 @@ def seq2ids(secrets_file: str, fasta_out: str, metadata_tsv_out: str, min_len: i
 
 if __name__ == "__main__":
     seq2ids()
-
-    # seqs = rf['sequence'].tolist()
-    #
-    # first_seq = seqs[0]
-    #
-    # # print(first_seq)
-    #
-    # # sequence_file = "blast_example.fasta"
-    # #
-    # # # make safer with with
-    # # sequence_data = open(sequence_file).read()
-    # #
-    # # print(sequence_data)
-    #
-    # ts = time.time()
-    # st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-    # print(st)
-    #
-    # # seq_record = next(SeqIO.parse(sequence_file, 'fasta'))
-    # #
-    # # print(seq_record.id)
-    # # print(seq_record.seq)
-    #
-    # # # one minute?
-    # # result_handle = NCBIWWW.qblast(program="blastn", database="nt", sequence=first_seq)
-    # #
-    # # ts = time.time()
-    # # st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-    # # print(st)
-    # #
-    # # blast_results = result_handle.read()
-    # #
-    # # print(blast_results)

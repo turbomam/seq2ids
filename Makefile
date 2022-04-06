@@ -6,19 +6,32 @@ blast_thread_count=14
 
 .PHONY: uniprot_approach load_seqs_blast_result clean blast_res_to_sqlite  nt_approach all
 
-uniprot_approach: clean seq2ids_v_uniprot.tsv load_seqs_blast_result
+target/parts_partial.tsv:
+	# may contain carriage returns
+	psql -h localhost -p 1111 -d felix -U mam -f sql/parts_partial.sql -F'	' --no-align --pset footer > $@
+	sqlite3 target/seq2ids.db ".mode tabs" ".import target/parts_partial.tsv parts_partial" ""
+
+target/modifications.tsv:
+	# may contain carriage returns
+	psql -h localhost -p 1111 -d felix -U mam -f sql/modifications.sql -F'	' --no-align --pset footer > $@
+	sqlite3 target/seq2ids.db ".mode tabs" ".import target/modifications.tsv modifications" ""
+
+target/part_characterization.tsv:
+	sqlite3 target/seq2ids.db < sql/part_characterization.sql > $@
+
+uniprot_approach: clean target/seq2ids_v_uniprot.tsv load_seqs_blast_result target/parts_partial.tsv target/modifications.tsv target/part_characterization.tsv
 	poetry run python seq2ids/get_uniprot_entries.py
 	sqlite3 target/seq2ids.db < sql/parts_up_annotations.sql
 
 clean:
-	rm -rf seq2ids.*
+	#rm -rf seq2ids.*
 	rm -rf target/*
 	rm -rf blastdbs/*
 	rm -rf swissprot*
 	rm -rf taxdb*
-	rm -rf seq2ids_v_uniprot.tsv
+	#rm -rf seq2ids_v_uniprot.tsv
 
-# todo run blast
+# run blast
 #   locally?
 #   submissions against nt, to NCBI, via BioPython SLOW
 #   elastic blast $, not instantaneous either
@@ -51,6 +64,7 @@ target/seq2ids_v_uniprot.tsv: target/seq2ids.fasta taxdb.bti
 
 # evalue bitscore length pident qacc qcovhsp qcovs qstart qend qseqid sacc sallacc sallgi sallseqid salltitles sblastnames scomnames sstart send sgi sseqid staxids stitle sskingdoms ssciname gapopen mismatch"
 # qacc qcovhsp qcovs qstart qend bitscore score evalue length pident sacc sstart send sallacc sseqid sallseqid stitle salltitles staxids sskingdoms sscinames sblastnames scomnames"
+# diff: gapopen mismatch qseqid sallgi score sgi
 
 # sorting on ids into fasta not working
 target/seq2ids.fasta:
@@ -80,7 +94,7 @@ blast_res_to_sqlite: target/parts_sequences_plus.tsv
 ##	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_all_swissprot/batch_001-blastx-swissprot.out blast_results" ""
 ##	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_all_swissprot/batch_002-blastx-swissprot.out blast_results" ""
 #	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_all_swissprot/batch_002-blastx-swissprot.out blast_results" ""
-	sqlite3 target/seq2ids.db ".mode tabs" ".import seq2ids_v_uniprot.tsv blast_results" ""
+	sqlite3 target/seq2ids.db ".mode tabs" ".import target/seq2ids_v_uniprot.tsv blast_results" ""
 	sqlite3 target/seq2ids.db < sql/indices.sql
 	# how many HSPs use each genome?
 	sqlite3 target/seq2ids.db < sql/insertion_genome_hsp_counts.sql
