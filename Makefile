@@ -2,7 +2,7 @@
 # may require ssh tunel to postgres
 
 max_eval=1e-20
-blast_thread_count=14
+blast_thread_count=10
 
 .PHONY: uniprot_approach load_seqs_blast_result clean blast_res_to_sqlite  nt_approach all
 
@@ -16,10 +16,10 @@ target/modifications.tsv:
 	psql -h localhost -p 1111 -d felix -U mam -f sql/modifications.sql -F'	' --no-align --pset footer > $@
 	sqlite3 target/seq2ids.db ".mode tabs" ".import target/modifications.tsv modifications" ""
 
-target/part_characterization.tsv:
+target/part_characterization.tsv: uniprot_approach
 	sqlite3 target/seq2ids.db < sql/part_characterization.sql > $@
 
-uniprot_approach: clean target/seq2ids_v_uniprot.tsv load_seqs_blast_result target/parts_partial.tsv target/modifications.tsv target/part_characterization.tsv
+uniprot_approach: clean target/seq2ids_v_uniprot.tsv load_seqs_blast_result target/parts_partial.tsv target/modifications.tsv
 	poetry run python seq2ids/get_uniprot_entries.py
 	sqlite3 target/seq2ids.db < sql/parts_up_annotations.sql
 
