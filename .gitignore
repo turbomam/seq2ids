@@ -1,5 +1,9 @@
 local/
 .DS_Store
+blastdbs/
+taxdb.*
+.idea/
+swissprot.tar.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
