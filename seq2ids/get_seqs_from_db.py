@@ -20,7 +20,9 @@ class SeqsFromDb:
                 print(exc)
 
     def query_to_frame(self):
-        database_uri = f"postgresql+psycopg2://mam:{self.secrets_dict['db_pass']}@localhost:1111/felix"
+        # assumes that ssh tunnel is established
+        # database_uri = f"postgresql+psycopg2://mam:{self.secrets_dict['db_pass']}@localhost:1111/felix"
+        database_uri = f"postgresql+psycopg2://{self.secrets_dict['db_user']}@localhost:1111/felix"
         engine = create_engine(database_uri)
         my_query = "SELECT * FROM parts_sequences"
         results_frame = pd.read_sql_query(my_query, engine)

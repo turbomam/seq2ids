@@ -102,31 +102,31 @@ blast_res_to_sqlite: target/parts_sequences_plus.tsv
 	sqlite3 target/seq2ids.db < sql/insertions_querys_genome_ranking.sql
 	sqlite3 target/seq2ids.db < sql/ranges_to_download.sql
 
-target/parts_partial.tsv:
-	# may contain carriage returns
-	psql -h localhost -p 1111 -d felix -U mam -f sql/parts_partial.sql -F'	' --no-align --pset footer > $@
-	sqlite3 target/seq2ids.db ".mode tabs" ".import target/parts_partial.tsv parts_partial" ""
-
-target/modifications.tsv:
-	# may contain carriage returns
-	psql -h localhost -p 1111 -d felix -U mam -f sql/modifications.sql -F'	' --no-align --pset footer > $@
-	sqlite3 target/seq2ids.db ".mode tabs" ".import target/modifications.tsv modifications" ""
+#target/parts_partial.tsv:
+#	# may contain carriage returns
+#	psql -h localhost -p 1111 -d felix -U mam -f sql/parts_partial.sql -F'	' --no-align --pset footer > $@
+#	sqlite3 target/seq2ids.db ".mode tabs" ".import target/parts_partial.tsv parts_partial" ""
+#
+#target/modifications.tsv:
+#	# may contain carriage returns
+#	psql -h localhost -p 1111 -d felix -U mam -f sql/modifications.sql -F'	' --no-align --pset footer > $@
+#	sqlite3 target/seq2ids.db ".mode tabs" ".import target/modifications.tsv modifications" ""
 
 # ---
 
-seq2ids_under_30_nt.fasta:
-	poetry run seq2ids \
-		--secrets_file local/secrets.yaml \
-		--fasta_out $@ \
-		--max_len 30 \
-		--metadata_tsv_out $(subst .fasta,.tsv,$@)
-
-seq2ids_30_nt_plus.fasta:
-	poetry run seq2ids \
-		--secrets_file local/secrets.yaml \
-		--fasta_out $@ \
-		--max_len 30 \
-		--metadata_tsv_out $(subst .fasta,.tsv,$@)
+#seq2ids_under_30_nt.fasta:
+#	poetry run seq2ids \
+#		--secrets_file local/secrets.yaml \
+#		--fasta_out $@ \
+#		--max_len 30 \
+#		--metadata_tsv_out $(subst .fasta,.tsv,$@)
+#
+#seq2ids_30_nt_plus.fasta:
+#	poetry run seq2ids \
+#		--secrets_file local/secrets.yaml \
+#		--fasta_out $@ \
+#		--max_len 30 \
+#		--metadata_tsv_out $(subst .fasta,.tsv,$@)
 
 # select
   #	"type" ,
