@@ -69,9 +69,15 @@ target/seq2ids_v_uniprot.tsv: target/seq2ids.fasta taxdb.bti
 # sorting on ids into fasta not working
 target/seq2ids.fasta:
 	poetry run seq2ids \
-		--secrets_file local/secrets.yaml \
+		--postgres_secrets_file local/secrets.yaml \
 		--fasta_out $@ \
 		--metadata_tsv_out $(subst .fasta,.tsv,$@)
+
+#target/seq2ids.fasta:
+#	poetry run seq2ids \
+#		--sqlite_file local/sqlite_not_postgres.db \
+#		--fasta_out $@ \
+#		--metadata_tsv_out $(subst .fasta,.tsv,$@)
 
 load_seqs_blast_result: target/parts_sequences_plus.tsv blast_res_to_sqlite
 
