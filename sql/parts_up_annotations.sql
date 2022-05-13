@@ -29,5 +29,10 @@ from
 	blast_results br
 join uniprot_annotations ua on
 	sacc = ua.Entry
+-- join parts_sequences_plus psp on
+--	qacc = psp.seq_name
+-- todo double CHECK
+-- todo cast psp.id to string?
 join parts_sequences_plus psp on
-	qacc = psp.seq_name order by seq_name, bitscore desc;
+	br.qacc = psp.id
+order by seq_name, bitscore desc;

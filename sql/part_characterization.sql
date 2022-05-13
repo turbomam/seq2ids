@@ -29,7 +29,7 @@ from
 join parts_partial pp on
 	psp.part_id = pp.id
 left outer join modifications m on
-	pp.alias = m.element_id
+    pp.alias = m.element_id
 left outer join blast_results br on
 	psp.id = br.qacc
 left OUTER join uniprot_annotations ua on
