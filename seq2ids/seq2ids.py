@@ -10,6 +10,7 @@ import click_log
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+import re
 
 # from get_seqs_from_db import SeqsFromDb
 
@@ -84,7 +85,8 @@ def seq2ids(postgres_secrets_file: str, sqlite_file: str, fasta_out: str, metada
 
     with open(fasta_out, 'w') as f_out:
         for seqs in ds_lod:
-            sr = SeqRecord(Seq(seqs['sequence']), str(seqs['id']), '', '')
+            tidy = re.sub(r'\s+', '', seqs["sequence"])
+            sr = SeqRecord(Seq(tidy), str(seqs['id']), '', '')
             r = SeqIO.write(sr, f_out, 'fasta')
             if r != 1:
                 logger.error('Error while writing sequence:  ' + sr.id)

@@ -1,7 +1,7 @@
 # doesn't yet do any special handling of deletion flanks
 # may require ssh tunel to postgres
 
-max_eval=1e-20
+max_eval=1e-5
 blast_thread_count=10
 
 # local/sqlite_not_postgres.db is hardcoded into sql/by_attachement.sql
@@ -56,18 +56,30 @@ target/seq2ids_v_uniprot.tsv: target/seq2ids.fasta taxdb.bti
 	cat target/at_delim_blast.txt | tr '@' '\t' > $@
 	rm target/at_delim_blast.txt
 
+target/seq2ids_v_fpbase.tsv: target/seq2ids.fasta data/fpbase.fasta.psq
+	blastx \
+		-query $< \
+		-db data/fpbase.fasta \
+		-num_threads ${blast_thread_count} \
+		-out target/at_delim_blast.txt \
+		-evalue ${max_eval} \
+		-outfmt "6 delim=@ qacc qcovhsp qcovs qstart qend bitscore score evalue length pident sacc sstart send sallacc sseqid sallseqid stitle salltitles staxids sskingdoms sscinames sblastnames scomnames"
+	cat target/at_delim_blast.txt | tr '@' '\t' > $@
+	rm target/at_delim_blast.txt
+
 # todo separate nt blast searches for > 30 nt vs shorter queries
 # todo make sure they were run with the right blast subtasks
 # todo could programmatically generate elastic blast's .ini file's -outfmt
 #   and use the same for the initial header import below
 # todo create VIEWs?
 # todo when ranking, is the precedence ltr?
-blast_res_to_sqlite: target/seq2ids_v_uniprot.tsv
+blast_res_to_sqlite: target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv
 	#sqlite3 target/seq2ids.db ".mode tabs" ".import seq2ids_elastic-blast_header.tsv blast_results" ""
 	sqlite3 target/seq2ids.db < sql/create_blast_results_table.sql
 ## this is an example of parsing elastic blast results
 #	sqlite3 target/seq2ids.db ".mode tabs" ".import local/seq2ids_repeat/batch_000-blastn-nt.out  blast_results" ""
 	sqlite3 target/seq2ids.db ".mode tabs" ".import target/seq2ids_v_uniprot.tsv blast_results" ""
+	sqlite3 target/seq2ids.db ".mode tabs" ".import target/seq2ids_v_fpbase.tsv blast_results" ""
 	sqlite3 target/seq2ids.db < sql/by_attachement.sql
 	sqlite3 target/seq2ids.db < sql/indices.sql
 	# how many HSPs use each genome?
@@ -75,6 +87,14 @@ blast_res_to_sqlite: target/seq2ids_v_uniprot.tsv
 	# rank each genome for each query
 	sqlite3 target/seq2ids.db < sql/insertions_querys_genome_ranking.sql
 	sqlite3 target/seq2ids.db < sql/ranges_to_download.sql
+
+data/fpbase.fasta:
+	poetry run python seq2ids/get_fluor_prot_seqs.py
+
+data/fpbase.fasta.psq: data/fpbase.fasta
+	makeblastdb -in $< -dbtype prot
+
+
 
 # ----
 
