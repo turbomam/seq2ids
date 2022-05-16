@@ -16,6 +16,7 @@ select
 	pp."type" as mod_type,
 	pp.alias,
 	br.sacc,
+	br.blast_db,
 	br.bitscore ,
 	ua."Gene names  (primary )" as gene_name_1ry,
 	ua."Gene names" as gene_names,

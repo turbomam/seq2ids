@@ -23,7 +23,8 @@ CREATE TABLE "blast_results"(
   "sskingdoms" TEXT,
   "sscinames" TEXT,
   "sblastnames" TEXT,
-  "scomnames" TEXT
+  "scomnames" TEXT,
+  "blast_db" TEXT
 );
 
 CREATE INDEX blast_results_idx ON blast_results(qacc, sacc, bitscore, "length", pident, qcovs, sstart, send);
