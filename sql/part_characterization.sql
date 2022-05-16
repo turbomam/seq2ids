@@ -7,7 +7,7 @@ select
 	-- possibly other keywords like compound, CDSpartial
 	-- also join modifications?
 	-- get GO terms
-	-- only getting partial parts because of columns contaioning carriage returns
+	-- only getting partial parts because of columns containing carriage returns
 	seq_name ,
 	alias || '_' || seq_len || '_bp_' || psp."type" as seq_name_recon,
 --	part_id ,
