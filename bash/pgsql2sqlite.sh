@@ -5,7 +5,7 @@
 if [[ "$4" != "" ]]; then
     DIR_NAME="$4"
 else
-    DIR_NAME="sqlite_dump"
+    DIR_NAME="felix_dump"
     mkdir -p $DIR_NAME
 fi
 
