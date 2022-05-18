@@ -7,7 +7,7 @@ from
 join parts_sequences_plus psp
 	on
 	br.qacc = psp.id
---where
+where br.blast_db = 'swissprot'
 --	psp."type" = 'insertion'
 group by
 	sacc

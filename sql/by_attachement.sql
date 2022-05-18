@@ -1,4 +1,4 @@
-attach 'data/sqlite_not_postgres.db' as felix;
+attach 'local/live_sqlite.db' as felix;
 attach 'target/seq2ids.db' as seq2ids;
 DROP TABLE IF EXISTS seq2ids.parts_sequences_plus;
 create table seq2ids.parts_sequences_plus as select * from felix.parts_sequences;
