@@ -3,8 +3,8 @@
 
 max_eval=1e-20
 blast_thread_count=10
-selected_sqlite_input_db=local/felix_dump.db
-#selected_sqlite_input_db=data/sqlite_not_postgres.db
+#selected_sqlite_input_db=local/felix_dump.db # prod for your eyes only
+selected_sqlite_input_db=data/sqlite_not_postgres.db # test for public
 destination_sqlite_db=target/seq2ids.db
 
 .PHONY: uniprot_approach load_seqs_blast_result clean blast_res_to_sqlite  nt_approach all sqlite_input live_db
@@ -99,6 +99,8 @@ blast_res_to_sqlite: target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv
 	# rank each genome for each query
 	sqlite3 $(destination_sqlite_db) < sql/insertions_querys_genome_ranking.sql
 	sqlite3 $(destination_sqlite_db) < sql/ranges_to_download.sql
+	# seq2ids/one_best_up.py undoes several previous steps that try to identify the minimal number of uniprot annotations that need to be retrieved
+	poetry run python seq2ids/one_best_up.py
 
 data/fpbase.fasta:
 	poetry run python seq2ids/get_fluor_prot_seqs.py

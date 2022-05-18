@@ -10,13 +10,16 @@ pd.set_option('display.max_columns', None)
 
 seq2ids_db_fp = "target/seq2ids.db"
 
+# sacc_table = 'ranges_to_download'
+sacc_table = 'one_best_up'
+
 keep_frac = 1
 
 submission_chunk_size = 300
 
 seq2ids_db_conn = sqlite3.connect(seq2ids_db_fp)
 
-ranges_to_download_q = "select sacc from ranges_to_download order by sacc"
+ranges_to_download_q = f"select distinct sacc from {sacc_table} order by sacc"
 
 ranges_to_download_res = pd.read_sql_query(ranges_to_download_q, seq2ids_db_conn)
 
