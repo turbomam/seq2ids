@@ -53,7 +53,7 @@ df = df.loc[df.groupby(["seq_name"])["weighted_score"].idxmax()]
 
 # drop the annotations_col_count column since it does not add any value to the
 # data itself
-df = df.drop(columns="annotations_col_count")
+df = df.drop(columns=["annotations_col_count", "weighted_score"])
 
 # write bitscore and presence of metadata filtered part_characterization.tsv
 # file into another tsv file in target folder
