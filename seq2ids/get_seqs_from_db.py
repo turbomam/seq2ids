@@ -22,6 +22,8 @@ class SeqsFromDb:
     def sqlite_to_frame(self, sqlite_file):
         # where <path> is relative:
         engine = create_engine(f"sqlite:///{sqlite_file}")
+        # todo do not leave this where filter in!!!
+        # my_query = "SELECT * FROM parts_sequences where type = 'insertion'"
         my_query = "SELECT * FROM parts_sequences"
         results_frame = pd.read_sql_query(my_query, engine)
         engine.dispose()

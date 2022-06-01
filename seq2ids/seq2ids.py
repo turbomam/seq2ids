@@ -16,8 +16,12 @@ import re
 
 from seq2ids.get_seqs_from_db import SeqsFromDb
 
+import pandas as pd
+
 logger = logging.getLogger(__name__)
 click_log.basic_config(logger)
+
+pd.options.display.max_columns = None
 
 
 @click.command()
@@ -53,6 +57,8 @@ def seq2ids(postgres_secrets_file: str, sqlite_file: str, fasta_out: str, metada
         rf = sfd.sqlite_to_frame(sqlite_file)
     else:
         exit()
+
+    rf = rf.loc[rf['type'].eq('insertion')]
 
     for_fasta = rf[['id', 'sequence']].copy()
     for_fasta['sequence'] = for_fasta['sequence'].str.replace(' ', '')

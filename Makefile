@@ -3,8 +3,8 @@
 
 max_eval=1e-20
 blast_thread_count=10
-#selected_sqlite_input_db=local/felix_dump.db # prod for your eyes only
-selected_sqlite_input_db=data/sqlite_not_postgres.db # test for public
+selected_sqlite_input_db=local/felix_dump.db # prod for your eyes only
+#selected_sqlite_input_db=data/sqlite_not_postgres.db # test for public
 destination_sqlite_db=target/seq2ids.db
 
 .PHONY: uniprot_approach load_seqs_blast_result clean blast_res_to_sqlite  nt_approach all sqlite_input live_db
@@ -13,6 +13,7 @@ all: target/part_characterization.tsv
 
 target/part_characterization.tsv: uniprot_sqlite_input
 	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
+	poetry run python seq2ids/parts_best_match.py
 
 uniprot_sqlite_input: clean local/felix_dump.db live_db target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv blast_res_to_sqlite
 	poetry run python seq2ids/get_uniprot_entries.py
@@ -94,12 +95,13 @@ blast_res_to_sqlite: target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv
 	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/seq2ids_v_fpbase.tsv blast_results" ""
 	sqlite3 $(destination_sqlite_db) < sql/by_attachement.sql
 	sqlite3 $(destination_sqlite_db) < sql/indices.sql
-	# how many HSPs use each genome?
-	sqlite3 $(destination_sqlite_db) < sql/insertion_genome_hsp_counts.sql
-	# rank each genome for each query
-	sqlite3 $(destination_sqlite_db) < sql/insertions_querys_genome_ranking.sql
-	sqlite3 $(destination_sqlite_db) < sql/ranges_to_download.sql
-	# seq2ids/one_best_up.py undoes several previous steps that try to identify the minimal number of uniprot annotations that need to be retrieved
+#	# how many HSPs use each genome?
+#	sqlite3 $(destination_sqlite_db) < sql/insertion_genome_hsp_counts.sql
+#	# rank each genome for each query
+#	sqlite3 $(destination_sqlite_db) < sql/insertions_querys_genome_ranking.sql
+#	sqlite3 $(destination_sqlite_db) < sql/ranges_to_download.sql
+#	# seq2ids/one_best_up.py undoes several previous steps that try to identify the minimal number of uniprot annotations that need to be retrieved
+	sqlite3 $(destination_sqlite_db) < sql/r2d_cov_by_ident.sql
 	poetry run python seq2ids/one_best_up.py
 
 data/fpbase.fasta:
