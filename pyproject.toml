@@ -30,3 +30,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 seq2ids = "seq2ids.seq2ids:seq2ids"
+parts_best_match = "seq2ids.parts_best_match:parts_best_match"
