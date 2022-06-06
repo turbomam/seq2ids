@@ -9,11 +9,13 @@ destination_sqlite_db=target/seq2ids.db
 
 .PHONY: uniprot_approach load_seqs_blast_result clean blast_res_to_sqlite  nt_approach all sqlite_input live_db
 
-all: target/part_characterization.tsv
+all: target/filtered_part_characterization.tsv
 
 target/part_characterization.tsv: uniprot_sqlite_input
 	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
-	poetry run python seq2ids/parts_best_match.py
+	
+target/filtered_part_characterization.tsv: target/part_characterization.tsv
+	poetry run parts_best_match --input $< --output $@
 
 uniprot_sqlite_input: clean local/felix_dump.db live_db target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv blast_res_to_sqlite
 	poetry run python seq2ids/get_uniprot_entries.py
