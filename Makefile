@@ -113,7 +113,8 @@ data/fpbase.fasta.psq: data/fpbase.fasta
 	makeblastdb -in $< -dbtype prot
 
 local/felix_dump.db:
-	poetry run sh bash/pgsql2sqlite.sh mam 1111 parts,parts_sequences,modifications
+	# see https://github.com/turbomam/seq2ids/issues/31
+	- poetry run sh bash/pgsql2sqlite.sh mam 1111 parts,parts_sequences,modifications
 
 # ----
 
