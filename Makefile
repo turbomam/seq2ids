@@ -43,7 +43,7 @@ taxdb.bti: blastdbs/swissprot.psq
 	wget https://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz
 	tar -xzvf taxdb.tar.gz --directory .
 
- # FOR SQLITE INPUT
+# FOR SQLITE INPUT
 target/seq2ids.fasta:
 	poetry run seq2ids \
 		--sqlite_file local/live_sqlite.db \
@@ -115,6 +115,7 @@ data/fpbase.fasta.psq: data/fpbase.fasta
 local/felix_dump.db:
 	# see issue XXX
 	# this may error out even if the tables are created and populated
+	# see https://github.com/turbomam/seq2ids/issues/31
 	- poetry run sh bash/pgsql2sqlite.sh mam 1111 parts,parts_sequences,modifications
 
 # ----
