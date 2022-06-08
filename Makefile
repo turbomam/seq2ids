@@ -113,7 +113,9 @@ data/fpbase.fasta.psq: data/fpbase.fasta
 	makeblastdb -in $< -dbtype prot
 
 local/felix_dump.db:
-	poetry run sh bash/pgsql2sqlite.sh mam 1111 parts,parts_sequences,modifications
+	# see issue XXX
+	# this may error out even if the tables are created and populated
+	- poetry run sh bash/pgsql2sqlite.sh mam 1111 parts,parts_sequences,modifications
 
 # ----
 

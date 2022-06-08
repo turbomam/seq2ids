@@ -20,6 +20,7 @@ bcbio-gff = "^0.6.9"
 gffutils = "^0.10.1"
 black = "*"
 db-to-sqlite = {extras = ["postgresql"], version = "^1.4"}
+# sqlite-utils = "3.19"
 click-option-group = "^0.5.3"
 
 [tool.poetry.dev-dependencies]
