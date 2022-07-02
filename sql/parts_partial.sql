@@ -1,1 +1,0 @@
-select id, "type", "name", alias from parts;

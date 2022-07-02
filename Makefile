@@ -8,16 +8,12 @@ selected_sqlite_input_db=local/felix_dump.db # prod for your eyes only
 destination_sqlite_db=target/seq2ids.db
 
 .PHONY: all gentle blast_res_to_sqlite clean squeaky_clean live_db load_seqs_blast_result nt_approach sqlite_input \
-uniprot_approach uniprot_sqlite_input
+uniprot_approach uniprot_sqlite_input worthiness
 
-gentle: squeaky_clean local/felix_dump.db live_db target/seq2ids.fasta \
+all: squeaky_clean local/felix_dump.db live_db target/seq2ids.fasta \
 blastdbs/swissprot.psq taxdb.bti target/seq2ids_v_uniprot.tsv \
 data/fpbase.fasta data/fpbase.fasta.psq target/seq2ids_v_fpbase.tsv \
-blast_res_to_sqlite uniprot_sqlite_input
-
-#\
-#target/part_characterization.tsv
-
+blast_res_to_sqlite uniprot_sqlite_input worthiness
 
 squeaky_clean: clean
 	rm -rf blastdbs/*
@@ -127,96 +123,98 @@ blast_res_to_sqlite: target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv
 uniprot_sqlite_input:
 	poetry run python seq2ids/get_uniprot_entries.py
 
-# ---
-
-all: target/filtered_part_characterization.tsv
-
-target/part_characterization.tsv: uniprot_sqlite_input
-	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
-	
-target/filtered_part_characterization.tsv: target/part_characterization.tsv
-	poetry run parts_best_match --input $< --output $@
-
-target/parts_partial.tsv:
-	# may contain carriage returns
-	psql -h localhost -p 1111 -d felix -U mam -f sql/parts_partial.sql -F'	' --no-align --pset footer > $@
-	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/parts_partial.tsv parts_partial" ""
-
-target/modifications.tsv:
-	# may contain carriage returns
-	psql -h localhost -p 1111 -d felix -U mam -f sql/modifications.sql -F'	' --no-align --pset footer > $@
-	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/modifications.tsv modifications" ""
-
-#target/part_characterization.tsv: uniprot_approach
-#	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
-
-uniprot_approach: clean target/seq2ids_v_uniprot.tsv load_seqs_blast_result target/parts_partial.tsv target/modifications.tsv
-	poetry run python seq2ids/get_uniprot_entries.py
-	sqlite3 $(destination_sqlite_db) < sql/parts_up_annotations.sql
-
-# run blast
-#   locally?
-#   submissions against nt, to NCBI, via BioPython SLOW
-#   elastic blast $, not instantaneous either
-
-  # swissprot-prot-metadata.json               2022-04-04 15:14  444
-# swissprot.tar.gz                           2022-04-04 15:14  180M
-  # swissprot.tar.gz.md5                       2022-04-04 15:14   51
-  # taxdb-metadata.json                        2021-06-07 10:40  388
-# taxdb.tar.gz
-
-# evalue bitscore length pident qacc qcovhsp qcovs qstart qend qseqid sacc sallacc sallgi sallseqid salltitles sblastnames scomnames sstart send sgi sseqid staxids stitle sskingdoms ssciname gapopen mismatch"
-# qacc qcovhsp qcovs qstart qend bitscore score evalue length pident sacc sstart send sallacc sseqid sallseqid stitle salltitles staxids sskingdoms sscinames sblastnames scomnames"
-# diff: gapopen mismatch qseqid sallgi score sgi
-
-## sorting on ids into fasta not working
-## FOR POSTGRES INPUT
-#target/seq2ids.fasta:
-#	poetry run seq2ids \
-#		--postgres_secrets_file local/secrets.yaml \
-#		--fasta_out $@ \
-#		--metadata_tsv_out $(subst .fasta,.tsv,$@)
-
-# target/parts_sequences_plus.tsv required for Postgres approach
-load_seqs_blast_result:  blast_res_to_sqlite
-
-# 1 get sequences, names, part ids, types, lengths from felix postgres db
-target/parts_sequences_plus.tsv:
-	# # required for postgres apporach
-	# psql -h localhost -p 1111 -d felix -U mam -f sql/parts_sequences_plus.sql -F'	' --no-align --pset footer > $@
-	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/parts_sequences_plus.tsv parts_sequences_plus" ""
-
 worthiness:
 	poetry run python seq2ids/worthiness.py
 
 # ---
 
-# select
-  #	"type" ,
-  #	count(1)
-  #from
-  #	parts_sequences_plus psp
-  #group by
-  #	"type"
-  #order by
-  #	COUNT(1) desc ;
-
-#|type     |count(1)|
-#|---------|--------|
-#|insertion|228     |
-#|sequence |173     |
-#|flank2   |97      |
-#|deletion |97      |
-#|flank1   |95      |
-
-nt_approach: load_seqs_blast_result
-	sqlite3 $(destination_sqlite_db) < sql/smin_smax.sql
-	poetry run python seq2ids/efetch_features.py
-	sqlite3 $(destination_sqlite_db) < sql/b2f_summary.sql
-
-# blastx (on path) installed from...
-
-
-# requires commenting out the target/seq2ids_v_uniprot.tsv version you DON'T want
-postgres_input: clean target/seq2ids_v_uniprot.tsv
-
+#all: target/filtered_part_characterization.tsv
+#
+#target/part_characterization.tsv: uniprot_sqlite_input
+#	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
+#
+#target/filtered_part_characterization.tsv: target/part_characterization.tsv
+#	poetry run parts_best_match --input $< --output $@
+#
+#target/parts_partial.tsv:
+#	# may contain carriage returns
+#	psql -h localhost -p 1111 -d felix -U mam -f sql/parts_partial.sql -F'	' --no-align --pset footer > $@
+#	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/parts_partial.tsv parts_partial" ""
+#
+#target/modifications.tsv:
+#	# may contain carriage returns
+#	psql -h localhost -p 1111 -d felix -U mam -f sql/modifications.sql -F'	' --no-align --pset footer > $@
+#	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/modifications.tsv modifications" ""
+#
+##target/part_characterization.tsv: uniprot_approach
+##	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
+#
+#uniprot_approach: clean target/seq2ids_v_uniprot.tsv load_seqs_blast_result target/parts_partial.tsv target/modifications.tsv
+#	poetry run python seq2ids/get_uniprot_entries.py
+#	sqlite3 $(destination_sqlite_db) < sql/parts_up_annotations.sql
+#
+## run blast
+##   locally?
+##   submissions against nt, to NCBI, via BioPython SLOW
+##   elastic blast $, not instantaneous either
+#
+#  # swissprot-prot-metadata.json               2022-04-04 15:14  444
+## swissprot.tar.gz                           2022-04-04 15:14  180M
+#  # swissprot.tar.gz.md5                       2022-04-04 15:14   51
+#  # taxdb-metadata.json                        2021-06-07 10:40  388
+## taxdb.tar.gz
+#
+## evalue bitscore length pident qacc qcovhsp qcovs qstart qend qseqid sacc sallacc sallgi sallseqid salltitles sblastnames scomnames sstart send sgi sseqid staxids stitle sskingdoms ssciname gapopen mismatch"
+## qacc qcovhsp qcovs qstart qend bitscore score evalue length pident sacc sstart send sallacc sseqid sallseqid stitle salltitles staxids sskingdoms sscinames sblastnames scomnames"
+## diff: gapopen mismatch qseqid sallgi score sgi
+#
+### sorting on ids into fasta not working
+### FOR POSTGRES INPUT
+##target/seq2ids.fasta:
+##	poetry run seq2ids \
+##		--postgres_secrets_file local/secrets.yaml \
+##		--fasta_out $@ \
+##		--metadata_tsv_out $(subst .fasta,.tsv,$@)
+#
+## target/parts_sequences_plus.tsv required for Postgres approach
+#load_seqs_blast_result:  blast_res_to_sqlite
+#
+## 1 get sequences, names, part ids, types, lengths from felix postgres db
+#target/parts_sequences_plus.tsv:
+#	# # required for postgres apporach
+#	# psql -h localhost -p 1111 -d felix -U mam -f sql/parts_sequences_plus.sql -F'	' --no-align --pset footer > $@
+#	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/parts_sequences_plus.tsv parts_sequences_plus" ""
+#
+#
+#
+## ---
+#
+## select
+#  #	"type" ,
+#  #	count(1)
+#  #from
+#  #	parts_sequences_plus psp
+#  #group by
+#  #	"type"
+#  #order by
+#  #	COUNT(1) desc ;
+#
+##|type     |count(1)|
+##|---------|--------|
+##|insertion|228     |
+##|sequence |173     |
+##|flank2   |97      |
+##|deletion |97      |
+##|flank1   |95      |
+#
+#nt_approach: load_seqs_blast_result
+#	sqlite3 $(destination_sqlite_db) < sql/smin_smax.sql
+#	poetry run python seq2ids/efetch_features.py
+#	sqlite3 $(destination_sqlite_db) < sql/b2f_summary.sql
+#
+## blastx (on path) installed from...
+#
+#
+## requires commenting out the target/seq2ids_v_uniprot.tsv version you DON'T want
+#postgres_input: clean target/seq2ids_v_uniprot.tsv
+#

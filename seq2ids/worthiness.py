@@ -41,7 +41,6 @@ select
     go_ids,
     go_labels,
     modification_type,
-    modification_type,
     org_scientificName,
     pident,
     primaryAccession,
@@ -92,6 +91,10 @@ worthiness_res["rank"] = worthiness_res.groupby(["seq_name"])["worthiness"].rank
 worthiest = worthiness_res.loc[worthiness_res['rank'].eq(1)]
 
 worthiest.to_csv(worthiness_tsv_out, sep="\t", index=False)
+
+worthiest.to_sql(
+    name="worthiest", con=seq2ids_db_conn, if_exists="replace", index=False
+)
 
 # --funding_source
 # --genotype_phenotype

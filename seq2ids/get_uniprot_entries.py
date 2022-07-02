@@ -10,6 +10,10 @@ seq2ids_db_fp = "target/seq2ids.db"
 
 paname = "primaryAccession"
 
+# todo better handling of fpbase esp annotations and prioritizing relative to uniprot
+# todo better handling of coimpound insertions
+# todo ready to start including other non-flank sequence types?
+
 
 def get_highlights(obj):
     highlights = {}
@@ -53,6 +57,49 @@ def get_highlights(obj):
     highlights["taxonId"] = obj["organism"]["taxonId"]
 
     return highlights
+
+
+seq2ids_db_conn = sqlite3.connect(seq2ids_db_fp)
+
+annotatable_q = f"select distinct sacc from blast_results where pident > 90 and qcovs > 90 and blast_db = 'swissprot'"
+
+annotatable_res = pd.read_sql_query(annotatable_q, seq2ids_db_conn)
+
+saccs = annotatable_res["sacc"].to_list()
+saccs.sort()
+
+annotations = {}
+for sacc in saccs:
+    print(sacc)
+    url = f"https://rest.uniprot.org/uniprotkb/{sacc}.json"
+    sacc_res = requests.get(url).json()
+    annotations[sacc] = sacc_res
+
+annotation_ids = list(annotations.keys())
+annotation_ids.sort()
+
+highlight_list = []
+for current_id in annotation_ids:
+    print(current_id)
+    highlight = get_highlights(annotations[current_id])
+    highlight_list.append(highlight)
+
+highlight_frame = pd.DataFrame(highlight_list)
+
+temp = highlight_frame.columns
+temp = list(temp)
+
+temp.remove(paname)
+temp.sort()
+temp = [paname] + temp
+
+highlight_frame = highlight_frame[temp]
+
+seq2ids_db_conn = sqlite3.connect(seq2ids_db_fp)
+
+highlight_frame.to_sql(
+    name="uniprot_annotations", con=seq2ids_db_conn, if_exists="replace", index=False
+)
 
 
 # include_fields = ['id', 'entry name', 'genes', 'genes(PREFERRED)', 'genes(ALTERNATIVE)', 'genes(OLN)', 'genes(ORF)',
@@ -131,72 +178,12 @@ def get_highlights(obj):
 #         yield l[i : i + n]
 
 
-seq2ids_db_conn = sqlite3.connect(seq2ids_db_fp)
-
-annotatable_q = f"select distinct sacc from blast_results where pident > 90 and qcovs > 90 and blast_db = 'swissprot'"
-
-annotatable_res = pd.read_sql_query(annotatable_q, seq2ids_db_conn)
-
-saccs = annotatable_res["sacc"].to_list()
-saccs.sort()
-
-annotations = {}
-for sacc in saccs:
-    print(sacc)
-    url = f"https://rest.uniprot.org/uniprotkb/{sacc}.json"
-    sacc_res = requests.get(url).json()
-    annotations[sacc] = sacc_res
-
-annotation_ids = list(annotations.keys())
-annotation_ids.sort()
-
-highlight_list = []
-for current_id in annotation_ids:
-    print(current_id)
-    highlight = get_highlights(annotations[current_id])
-    highlight_list.append(highlight)
-
-highlight_frame = pd.DataFrame(highlight_list)
-
-temp = highlight_frame.columns
-temp = list(temp)
-
-temp.remove(paname)
-temp.sort()
-temp = [paname] + temp
-
-highlight_frame = highlight_frame[temp]
-
-seq2ids_db_conn = sqlite3.connect(seq2ids_db_fp)
-
-highlight_frame.to_sql(
-    name="uniprot_annotations", con=seq2ids_db_conn, if_exists="replace", index=False
-)
-
-
-# # chunks_lof = []
-# # submission_chunks = list(divide_chunks(subsetted_saccs, submission_chunk_size))
-# # for chunk in submission_chunks:
-# #     chunk_frame = get_uniprot_sequences(uniprot_ids=submission_chunks[0], uniprot_cols=include_fields)
-# #     # todo these are empty!
-# # #     chunks_lof.append(chunk_frame)
-# #
-# # # uniprot_frame = pd.concat(chunks_lof)
-# # #
-# # # uniprot_frame.to_csv("target/uniprot_response_frame.tsv", sep="\t", index=False)
-# # #
 # # # # # dtypedict or scalar, optional
 # # # # # Specifying the datatype for columns. If a dictionary is used, the keys should be the column names
 # # # # # and the values should be the SQLAlchemy types or strings for the sqlite3 legacy mode.
 # # # # # If a scalar is provided, it will be applied to all columns.
 # # # #
 # # # # # if_exists{‘fail’, ‘replace’, ‘append’}, default ‘fail’
-# # #
-# # # print(uniprot_frame)
-# # #
-# # # # uniprot_frame.to_sql(name="uniprot_annotations", con=seq2ids_db_conn, if_exists="replace", index=True)
-# # #
-# # # # # ---
 # # # # # for record-keeping
 # # # #
 # # # # skip_fields = ['Virus hosts', 'database(CCDS)', 'database(BioGRID)', 'comment(PATHWAY)', 'comment(CATALYTIC ACTIVITY)',

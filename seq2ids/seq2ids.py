@@ -14,7 +14,7 @@ import re
 
 # from get_seqs_from_db import SeqsFromDb
 
-from seq2ids.get_seqs_from_db import SeqsFromDb
+from seq2ids.old.get_seqs_from_db import SeqsFromDb
 
 import pandas as pd
 
