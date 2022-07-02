@@ -6,6 +6,5 @@ create view ranges_to_download as select
 from
 	blast_results
 where
-    -- only get annotations for blast results if the qcovs and pident are both roughly > 90
-	qcovs * pident > 8100
+	qcovs > 90 and pident > 90
 	and blast_db = 'swissprot';

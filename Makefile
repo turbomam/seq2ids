@@ -2,54 +2,65 @@
 # may require ssh tunel to postgres
 
 max_eval=1e-20
-blast_thread_count=10
+blast_thread_count=9
 selected_sqlite_input_db=local/felix_dump.db # prod for your eyes only
 #selected_sqlite_input_db=data/sqlite_not_postgres.db # test for public
 destination_sqlite_db=target/seq2ids.db
 
-.PHONY: uniprot_approach load_seqs_blast_result clean blast_res_to_sqlite  nt_approach all sqlite_input live_db
+.PHONY: all gentle blast_res_to_sqlite clean squeaky_clean live_db load_seqs_blast_result nt_approach sqlite_input \
+uniprot_approach uniprot_sqlite_input
 
-all: target/filtered_part_characterization.tsv
+gentle: squeaky_clean local/felix_dump.db live_db target/seq2ids.fasta \
+blastdbs/swissprot.psq taxdb.bti target/seq2ids_v_uniprot.tsv \
+data/fpbase.fasta data/fpbase.fasta.psq target/seq2ids_v_fpbase.tsv \
+blast_res_to_sqlite uniprot_sqlite_input
 
-target/part_characterization.tsv: uniprot_sqlite_input
-	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
-	
-target/filtered_part_characterization.tsv: target/part_characterization.tsv
-	poetry run parts_best_match --input $< --output $@
+#\
+#target/part_characterization.tsv
 
-uniprot_sqlite_input: clean local/felix_dump.db live_db target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv blast_res_to_sqlite
-	poetry run python seq2ids/get_uniprot_entries.py
-	sqlite3 $(destination_sqlite_db) < sql/parts_up_annotations.sql
 
-live_db:
-	cp $(selected_sqlite_input_db) local/live_sqlite.db
+squeaky_clean: clean
+	rm -rf blastdbs/*
+	rm -rf swissprot*
+	rm -rf taxdb*
 
 clean:
 	rm -rf target/*
 	rm -rf local/felix_dump.db
 
-squeaky_clean: clean
-	#rm -rf seq2ids.*
-	rm -rf blastdbs/*
-	rm -rf swissprot*
-	rm -rf taxdb*
-	#	rm -rf seq2ids_v_uniprot.tsv
+local/felix_dump.db:
+	# gets some of the Celniker FELIX Postgres database contents
+	# this may error out even if the tables are created and populated
+	# see https://github.com/turbomam/seq2ids/issues/31
+	- poetry run sh bash/pgsql2sqlite.sh mam 1111 parts,parts_sequences,modifications
 
-blastdbs/swissprot.psq:
-	wget https://ftp.ncbi.nlm.nih.gov/blast/db/swissprot.tar.gz
-	tar -xzvf swissprot.tar.gz --directory blastdbs
+live_db:
+	# copying whatever SQLite file that's represented by $(selected_sqlite_input_db) to local/live_sqlite.db
+	# could be a test database, or Celniker FELIX Postgres contents
+	#  so SQl scripts can know where to find
+	cp $(selected_sqlite_input_db) local/live_sqlite.db
 
-taxdb.bti: blastdbs/swissprot.psq
-	wget https://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz
-	tar -xzvf taxdb.tar.gz --directory .
-
-# FOR SQLITE INPUT
+# SQLITE -> FASTA
 target/seq2ids.fasta:
 	poetry run seq2ids \
 		--sqlite_file local/live_sqlite.db \
 		--fasta_out $@ \
 		--metadata_tsv_out $(subst .fasta,.tsv,$@)
 
+# download NCBI's pre-indexed swissprot BLAST database
+# probably doesn't include trembl, so decreased search space
+blastdbs/swissprot.psq:
+	wget https://ftp.ncbi.nlm.nih.gov/blast/db/swissprot.tar.gz
+	tar -xzvf swissprot.tar.gz --directory blastdbs
+
+# get NCBI's taxon ID supplement for blast searches
+# subsequent steps seem to expect it at the root of the repo
+taxdb.bti: blastdbs/swissprot.psq
+	wget https://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz
+	tar -xzvf taxdb.tar.gz --directory .
+
+# blast the FELIX proteins (limited ti insertions somewhere!) against swissprot.
+# output is technically misnamed because the search database was swissprot not uniprot
 # assumes blastx is on the path
 # https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
 target/seq2ids_v_uniprot.tsv: target/seq2ids.fasta taxdb.bti
@@ -66,6 +77,15 @@ target/seq2ids_v_uniprot.tsv: target/seq2ids.fasta taxdb.bti
 		--tsv_out $@ \
 		--col_val swissprot
 	rm target/at_delim_blast.txt target/tab_delim_blast.tsv
+
+# get fluorescent protein database sequences from API
+# get/keep annotations, too (besides name?)
+data/fpbase.fasta:
+	poetry run python seq2ids/get_fluor_prot_seqs.py
+
+# index fluorescent protein database for blast
+data/fpbase.fasta.psq: data/fpbase.fasta
+	makeblastdb -in $< -dbtype prot
 
 target/seq2ids_v_fpbase.tsv: target/seq2ids.fasta data/fpbase.fasta.psq
 	blastx \
@@ -86,40 +106,36 @@ target/seq2ids_v_fpbase.tsv: target/seq2ids.fasta data/fpbase.fasta.psq
 # todo make sure they were run with the right blast subtasks
 # todo could programmatically generate elastic blast's .ini file's -outfmt
 #   and use the same for the initial header import below
-# todo create VIEWs?
-# todo when ranking, is the precedence ltr?
+# todo create SQLite VIEWs? for what?
+# todo when ranking, is the precedence left to right?
 blast_res_to_sqlite: target/seq2ids_v_uniprot.tsv target/seq2ids_v_fpbase.tsv
 	#sqlite3 $(destination_sqlite_db) ".mode tabs" ".import seq2ids_elastic-blast_header.tsv blast_results" ""
 	sqlite3 $(destination_sqlite_db) < sql/create_blast_results_table.sql
 ## this is an example of parsing elastic blast results
 #	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import local/seq2ids_repeat/batch_000-blastn-nt.out  blast_results" ""
+	# loading blast results from indiviual seaches into SQLite
 	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/seq2ids_v_uniprot.tsv blast_results" ""
 	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/seq2ids_v_fpbase.tsv blast_results" ""
+
+	# combine contents from 'local/live_sqlite.db' and 'target/seq2ids.db' into $(destination_sqlite_db)
 	sqlite3 $(destination_sqlite_db) < sql/by_attachement.sql
+
+	# index parts_sequences_plus
+	# add some more?
 	sqlite3 $(destination_sqlite_db) < sql/indices.sql
-#	# how many HSPs use each genome?
-#	sqlite3 $(destination_sqlite_db) < sql/insertion_genome_hsp_counts.sql
-#	# rank each genome for each query
-#	sqlite3 $(destination_sqlite_db) < sql/insertions_querys_genome_ranking.sql
-#	sqlite3 $(destination_sqlite_db) < sql/ranges_to_download.sql
-#	# seq2ids/one_best_up.py undoes several previous steps that try to identify the minimal number of uniprot annotations that need to be retrieved
-	sqlite3 $(destination_sqlite_db) < sql/r2d_cov_by_ident.sql
-	poetry run python seq2ids/one_best_up.py
 
-data/fpbase.fasta:
-	poetry run python seq2ids/get_fluor_prot_seqs.py
+uniprot_sqlite_input:
+	poetry run python seq2ids/get_uniprot_entries.py
 
-data/fpbase.fasta.psq: data/fpbase.fasta
-	makeblastdb -in $< -dbtype prot
+# ---
 
-local/felix_dump.db:
-	# see issue XXX
-	# this may error out even if the tables are created and populated
-	# see https://github.com/turbomam/seq2ids/issues/31
-	- poetry run sh bash/pgsql2sqlite.sh mam 1111 parts,parts_sequences,modifications
+all: target/filtered_part_characterization.tsv
 
-# ----
-
+target/part_characterization.tsv: uniprot_sqlite_input
+	sqlite3 $(destination_sqlite_db) < sql/part_characterization.sql > $@
+	
+target/filtered_part_characterization.tsv: target/part_characterization.tsv
+	poetry run parts_best_match --input $< --output $@
 
 target/parts_partial.tsv:
 	# may contain carriage returns
@@ -170,7 +186,8 @@ target/parts_sequences_plus.tsv:
 	# psql -h localhost -p 1111 -d felix -U mam -f sql/parts_sequences_plus.sql -F'	' --no-align --pset footer > $@
 	sqlite3 $(destination_sqlite_db) ".mode tabs" ".import target/parts_sequences_plus.tsv parts_sequences_plus" ""
 
-
+worthiness:
+	poetry run python seq2ids/worthiness.py
 
 # ---
 
