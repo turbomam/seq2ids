@@ -28,16 +28,25 @@ pd.options.display.max_columns = None
 @click_log.simple_verbosity_option(logger)
 # , required=False
 # try https://pypi.org/project/click-option-group/
-@optgroup.group('Input data sources', cls=RequiredMutuallyExclusiveOptionGroup,
-                help='The sources of the input data')
+@optgroup.group(
+    "Input data sources",
+    cls=RequiredMutuallyExclusiveOptionGroup,
+    help="The sources of the input data",
+)
 @optgroup.option("--postgres_secrets_file", type=click.Path(exists=True))
 @optgroup.option("--sqlite_file", type=click.Path(exists=True))
 @click.option("--fasta_out", type=click.Path(), required=True)
 @click.option("--metadata_tsv_out", type=click.Path(), required=True)
 @click.option("--min_len", type=int, help="inclusive")
 @click.option("--max_len", type=int, help="exclusive")
-def seq2ids(postgres_secrets_file: str, sqlite_file: str, fasta_out: str, metadata_tsv_out: str, min_len: int,
-            max_len: int):
+def seq2ids(
+        postgres_secrets_file: str,
+        sqlite_file: str,
+        fasta_out: str,
+        metadata_tsv_out: str,
+        min_len: int,
+        max_len: int,
+):
     """
     Gets slots, listed in config_tsv, from source_model and puts them in recipient_model
     :param postgres_secrets_file:
@@ -58,14 +67,32 @@ def seq2ids(postgres_secrets_file: str, sqlite_file: str, fasta_out: str, metada
     else:
         exit()
 
-    rf = rf.loc[rf['type'].eq('insertion')]
+    # rf = rf.loc[rf['type'].eq('insertion')]
 
-    for_fasta = rf[['id', 'sequence']].copy()
-    for_fasta['sequence'] = for_fasta['sequence'].str.replace(' ', '')
+    # |type     |seq_count|
+    # |---------|---------|
+    # |insertion|239      |
+    # |sequence |188      |
+    # |flank2   |108      |
+    # |flank1   |106      |
+    # |deletion |106      |
+
+    rf["seq_len"] = rf["sequence"].str.len()
+
+    # todo remove compound insertions based on seq name
+    rf = rf.loc[
+        rf["type"].isin(["insertion", "sequence", "deletion"])
+        & (~(rf["seq_name"].str.contains("compound")))
+        ]
+
+    print(rf["seq_name"])
+
+    for_fasta = rf[["id", "sequence"]].copy()
+    for_fasta["sequence"] = for_fasta["sequence"].str.replace(" ", "")
 
     metadata = for_fasta.copy()
-    metadata['seq_len'] = metadata['sequence'].str.len()
-    metadata = metadata[['id', 'seq_len']]
+    metadata["seq_len"] = metadata["sequence"].str.len()
+    metadata = metadata[["id", "seq_len"]]
 
     logger.info(f"sequence count        : {len(metadata.index)}")
     logger.info(f"min specified seq len : {min_len}")
@@ -76,26 +103,28 @@ def seq2ids(postgres_secrets_file: str, sqlite_file: str, fasta_out: str, metada
     if not min_len:
         min_len = 0
     if not max_len:
-        max_len = metadata['seq_len'].max() + 1
+        max_len = metadata["seq_len"].max() + 1
 
     # was using seq_name
-    desired_ids = metadata.loc[metadata['seq_len'].ge(min_len) & metadata['seq_len'].lt(max_len), 'id'].tolist()
+    desired_ids = metadata.loc[
+        metadata["seq_len"].ge(min_len) & metadata["seq_len"].lt(max_len), "id"
+    ].tolist()
 
-    desired_seqs = for_fasta.loc[for_fasta['id'].isin(desired_ids)]
+    desired_seqs = for_fasta.loc[for_fasta["id"].isin(desired_ids)]
 
     # desired_seqs.sort_values('id')
 
-    metadata.to_csv(metadata_tsv_out, sep='\t', index=False)
+    metadata.to_csv(metadata_tsv_out, sep="\t", index=False)
 
-    ds_lod = desired_seqs.to_dict(orient='records')
+    ds_lod = desired_seqs.to_dict(orient="records")
 
-    with open(fasta_out, 'w') as f_out:
+    with open(fasta_out, "w") as f_out:
         for seqs in ds_lod:
-            tidy = re.sub(r'\s+', '', seqs["sequence"])
-            sr = SeqRecord(Seq(tidy), str(seqs['id']), '', '')
-            r = SeqIO.write(sr, f_out, 'fasta')
+            tidy = re.sub(r"\s+", "", seqs["sequence"])
+            sr = SeqRecord(Seq(tidy), str(seqs["id"]), "", "")
+            r = SeqIO.write(sr, f_out, "fasta")
             if r != 1:
-                logger.error('Error while writing sequence:  ' + sr.id)
+                logger.error("Error while writing sequence:  " + sr.id)
 
 
 if __name__ == "__main__":

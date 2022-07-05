@@ -39,6 +39,8 @@ live_db:
 # SQLITE -> FASTA
 target/seq2ids.fasta:
 	poetry run seq2ids \
+		--min_len 51 \
+		--max_len 50000 \
 		--sqlite_file local/live_sqlite.db \
 		--fasta_out $@ \
 		--metadata_tsv_out $(subst .fasta,.tsv,$@)
